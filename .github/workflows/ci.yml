@@ -20,8 +20,8 @@ jobs:
       run:
         working-directory: services/${{ matrix.service }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: services/${{ matrix.service }}/go.mod
           cache-dependency-path: services/${{ matrix.service }}/go.sum
@@ -36,7 +36,7 @@ jobs:
   helm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: azure/setup-helm@v4
       - run: helm lint deploy/helm/linkpulse
       - name: Validate manifests
@@ -52,7 +52,7 @@ jobs:
       matrix:
         service: [shortener, analytics]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: services/${{ matrix.service }}/Dockerfile
@@ -61,7 +61,7 @@ jobs:
     needs: [test, helm]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: helm/kind-action@v1
         with:
           cluster_name: linkpulse
@@ -81,4 +81,4 @@ jobs:
         run: |
           kubectl get all
           kubectl describe pods
-          kubectl logs -l app.kubernetes.io/instance=linkpulse --all-containers --tail=100
+          kubectl logs -l app.kubernetes.io/instance=linkpulse --all-containers --tail=100 || true

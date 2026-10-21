@@ -21,7 +21,7 @@ jobs:
       matrix:
         service: [shortener, analytics]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: kind
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -86,7 +86,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: azure/setup-helm@v4
       - name: Push chart to GHCR
         run: |
