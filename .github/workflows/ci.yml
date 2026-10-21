@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: services/${{ matrix.service }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: services/${{ matrix.service }}/go.mod
@@ -36,7 +36,7 @@ jobs:
   helm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: azure/setup-helm@v4
       - run: helm lint deploy/helm/linkpulse
       - name: Validate manifests
@@ -52,7 +52,7 @@ jobs:
       matrix:
         service: [shortener, analytics]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: services/${{ matrix.service }}/Dockerfile
@@ -61,7 +61,7 @@ jobs:
     needs: [test, helm]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: helm/kind-action@v1
         with:
           cluster_name: linkpulse
