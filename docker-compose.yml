@@ -1,0 +1,24 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+
+  shortener:
+    build: ./services/shortener
+    environment:
+      REDIS_ADDR: redis:6379
+      BASE_URL: http://localhost:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
+  analytics:
+    build: ./services/analytics
+    environment:
+      REDIS_ADDR: redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
