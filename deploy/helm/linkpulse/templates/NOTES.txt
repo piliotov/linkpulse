@@ -1,0 +1,14 @@
+linkpulse is installed as release {{ .Release.Name }}.
+
+{{- if .Values.ingress.enabled }}
+
+Create a link:
+  curl -X POST http://{{ .Values.ingress.host }}/api/links -d '{"url":"https://example.com"}'
+
+Check its stats:
+  curl http://{{ .Values.ingress.host }}/api/stats/<code>
+{{- else }}
+
+Port-forward the shortener:
+  kubectl port-forward svc/{{ include "linkpulse.fullname" . }}-shortener {{ .Values.shortener.port }}
+{{- end }}
