@@ -1,0 +1,7 @@
+PLAN.md
+bin/
+coverage.out
+*.test
+.idea/
+.vscode/
+.env
