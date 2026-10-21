@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [shortener, analytics]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/${{ matrix.service }}/go.mod
+          cache-dependency-path: services/${{ matrix.service }}/go.sum
+      - run: go vet ./...
+      - run: go test -race -coverprofile=coverage.out ./...
+      - run: go tool cover -func=coverage.out | tail -1
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          working-directory: services/${{ matrix.service }}
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/linkpulse
+      - name: Validate manifests
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          for args in "" "--set shortener.autoscaling.enabled=true --set redis.persistence.enabled=true"; do
+            helm template linkpulse deploy/helm/linkpulse $args | ./kubeconform -strict -summary -
+          done
+
+  dockerfiles:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [shortener, analytics]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/${{ matrix.service }}/Dockerfile
+
+  e2e:
+    needs: [test, helm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: linkpulse
+      - name: Build and deploy
+        run: ./scripts/kind-deploy.sh
+        env:
+          TAG: ci-${{ github.sha }}
+      - name: Smoke test
+        run: |
+          kubectl port-forward svc/linkpulse-shortener 8080:8080 &
+          kubectl port-forward svc/linkpulse-analytics 8081:8081 &
+          sleep 3
+          ./scripts/smoke.sh
+      - run: helm test linkpulse
+      - name: Dump state on failure
+        if: failure()
+        run: |
+          kubectl get all
+          kubectl describe pods
+          kubectl logs -l app.kubernetes.io/instance=linkpulse --all-containers --tail=100
